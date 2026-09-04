@@ -11,8 +11,8 @@ export function AppHeader({ right }: { right?: ReactNode }) {
     <header className="sticky top-0 z-30 border-b border-border bg-bg/90 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
         <Link to="/" className="flex min-w-0 items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-md bg-primary font-display text-lg text-primary-fg">
-            序
+          <span className="flex h-9 items-center rounded-md bg-primary px-2.5 font-display text-[1.05rem] italic leading-none tracking-tight text-primary-fg">
+            The&nbsp;Q
           </span>
           <span className="min-w-0">
             <span className="block font-display text-base leading-tight tracking-tight">

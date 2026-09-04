@@ -8,6 +8,7 @@ type CatalogState = {
   loading: boolean;
   refresh: () => Promise<void>;
   upsertLocal: (p: Product) => void;
+  removeLocal: (id: string) => void;
   byId: (id: string) => Product | undefined;
 };
 
@@ -32,5 +33,7 @@ export const useCatalog = create<CatalogState>((set, get) => ({
         ? get().products.map((x) => (x.id === p.id ? p : x))
         : [...get().products, p],
     }),
+  removeLocal: (id) =>
+    set({ products: get().products.filter((x) => x.id !== id) }),
   byId: (id) => get().products.find((p) => p.id === id),
 }));
