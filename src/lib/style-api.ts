@@ -99,10 +99,17 @@ function seedValues(p: Product) {
 async function ensureSeeded() {
   const { getSql } = await import("@/lib/db");
   const sql = await getSql();
+  await sql`create table if not exists deleted_styles (
+    id text primary key,
+    deleted_at timestamptz not null default now()
+  )`;
+  const deletedRows = await sql<{ id: string }>`select id from deleted_styles`;
+  const deleted = new Set(deletedRows.map((r) => r.id));
   const counts = await sql<{ n: number }>`select count(*)::int as n from styles`;
   const n = counts[0]?.n ?? 0;
-  if (n >= PRODUCTS.length) return sql;
+  if (n >= PRODUCTS.length - deleted.size) return sql;
   for (const p of PRODUCTS) {
+    if (deleted.has(p.id)) continue;
     const v = seedValues(p);
     await sql`
       insert into styles (
@@ -174,6 +181,7 @@ export const saveStyle = createServerFn({ method: "POST" })
         image_side = excluded.image_side,
         updated_at = now()
     `;
+    await sql`delete from deleted_styles where id = ${data.id}`;
     return {
       id: data.id,
       originalSku: data.originalSku,
@@ -187,4 +195,19 @@ export const saveStyle = createServerFn({ method: "POST" })
       imageFront: front,
       imageSide: side,
     };
+  });
+
+export const deleteStyle = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({ id: z.string().min(1) }).parse(data))
+  .handler(async ({ data }): Promise<{ id: string }> => {
+    const { getSql } = await import("@/lib/db");
+    const sql = await getSql();
+    await sql`create table if not exists deleted_styles (
+      id text primary key,
+      deleted_at timestamptz not null default now()
+    )`;
+    await sql`delete from styles where id = ${data.id}`;
+    await sql`insert into deleted_styles (id) values (${data.id})
+      on conflict (id) do nothing`;
+    return { id: data.id };
   });
