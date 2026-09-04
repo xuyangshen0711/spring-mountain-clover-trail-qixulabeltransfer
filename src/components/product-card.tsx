@@ -45,7 +45,7 @@ export function ProductCard({
           onClick={() => onPick(product)}
           className="flex h-11 w-full items-center justify-center rounded-md border border-border text-sm text-fg hover:bg-secondary"
         >
-          选颜色加入检录
+          选颜色加入草稿
         </button>
       </div>
     </article>
