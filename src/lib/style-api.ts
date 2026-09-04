@@ -26,6 +26,7 @@ const productSchema = z.object({
       z.object({
         name: z.string().min(1).max(40),
         fabric: z.string().max(2000),
+        image: z.string().nullable().optional(),
       }),
     )
     .min(1)
@@ -105,12 +106,25 @@ async function ensureSeeded() {
   )`;
   const deletedRows = await sql<{ id: string }>`select id from deleted_styles`;
   const deleted = new Set(deletedRows.map((r) => r.id));
-  const counts = await sql<{ n: number }>`select count(*)::int as n from styles`;
-  const n = counts[0]?.n ?? 0;
-  if (n >= PRODUCTS.length - deleted.size) return sql;
+  const existing = await sql<{ id: string; image_front: string | null }>`
+    select id, image_front from styles
+  `;
+  const have = new Map(existing.map((r) => [r.id, r.image_front]));
+  const forceIds = new Set(["26C013", "26C018", "26C022", "26C032"]);
+  const missing = PRODUCTS.some((p) => !deleted.has(p.id) && !have.has(p.id));
+  const needImages = PRODUCTS.some(
+    (p) =>
+      !deleted.has(p.id) &&
+      have.has(p.id) &&
+      !have.get(p.id) &&
+      Boolean(p.imageFront),
+  );
+  const needForce = PRODUCTS.some((p) => forceIds.has(p.id) && !deleted.has(p.id));
+  if (!missing && !needImages && !needForce) return sql;
   for (const p of PRODUCTS) {
     if (deleted.has(p.id)) continue;
     const v = seedValues(p);
+    if (have.has(p.id) && have.get(p.id) && !forceIds.has(p.id)) continue;
     await sql`
       insert into styles (
         id, original_sku, factory, list_month, colors_json, kind, rule_label,
@@ -129,8 +143,8 @@ async function ensureSeeded() {
         rule_label = excluded.rule_label,
         factory_sizes_json = excluded.factory_sizes_json,
         extra_note = excluded.extra_note,
-        image_front = coalesce(excluded.image_front, styles.image_front),
-        image_side = coalesce(excluded.image_side, styles.image_side),
+        image_front = coalesce(styles.image_front, excluded.image_front),
+        image_side = coalesce(styles.image_side, excluded.image_side),
         updated_at = now()
     `;
   }

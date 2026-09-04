@@ -8,6 +8,7 @@ function styleImages(p: Product): string[] {
   };
   add(p.imageFront);
   add(p.imageSide);
+  for (const c of p.colors) add(c.image);
   return out;
 }
 

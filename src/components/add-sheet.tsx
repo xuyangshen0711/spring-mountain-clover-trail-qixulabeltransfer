@@ -28,6 +28,9 @@ export function AddSheet({
     Record<string, Record<string, number>>
   >({});
   const upsert = useDraft((s) => s.upsert);
+  const previewPhoto =
+    product.colors.find((c) => c.name === (activeColor || picked[0]))?.image ??
+    product.imageFront;
   const relabelDate = useDraft((s) => s.relabelDate);
 
   useEffect(() => {
@@ -94,7 +97,7 @@ export function AddSheet({
       >
         <div className="flex gap-3 border-b border-border p-4">
           <div className="size-16 overflow-hidden rounded-md bg-secondary">
-            <StylePhoto src={product.imageFront} alt="" />
+            <StylePhoto src={previewPhoto} alt="" />
           </div>
           <div className="min-w-0">
             <h2 id="add-sheet-title" className="font-mono text-lg tracking-tight">
