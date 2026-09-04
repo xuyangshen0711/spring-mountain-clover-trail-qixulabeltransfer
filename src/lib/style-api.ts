@@ -91,6 +91,8 @@ function seedValues(p: Product) {
     ruleLabel: p.ruleLabel,
     sizesJson: JSON.stringify(p.factorySizes),
     extraNote: p.extraNote ?? null,
+    imageFront: p.imageFront ?? null,
+    imageSide: p.imageSide ?? null,
   };
 }
 
@@ -105,12 +107,24 @@ async function ensureSeeded() {
     await sql`
       insert into styles (
         id, original_sku, factory, list_month, colors_json, kind, rule_label,
-        factory_sizes_json, extra_note
+        factory_sizes_json, extra_note, image_front, image_side
       ) values (
         ${v.id}, ${v.originalSku}, ${v.factory}, ${v.listMonth}, ${v.colorsJson},
-        ${v.kind}, ${v.ruleLabel}, ${v.sizesJson}, ${v.extraNote}
+        ${v.kind}, ${v.ruleLabel}, ${v.sizesJson}, ${v.extraNote},
+        ${v.imageFront}, ${v.imageSide}
       )
-      on conflict (id) do nothing
+      on conflict (id) do update set
+        original_sku = excluded.original_sku,
+        factory = excluded.factory,
+        list_month = excluded.list_month,
+        colors_json = excluded.colors_json,
+        kind = excluded.kind,
+        rule_label = excluded.rule_label,
+        factory_sizes_json = excluded.factory_sizes_json,
+        extra_note = excluded.extra_note,
+        image_front = coalesce(excluded.image_front, styles.image_front),
+        image_side = coalesce(excluded.image_side, styles.image_side),
+        updated_at = now()
     `;
   }
   return sql;
