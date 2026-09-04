@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "启序改标",
+      "hasCanvas": false,
+      "bodyTextLen": 913,
+      "bodyTextHash": "69f2b672caad816261da57047c3dfa62168c59cfd984f969b9a57bc53699c303",
+      "bodyTextPrefix": "序 启序改标 工厂尺码 → 启序尺码 资料库 草稿 0 QIXU · RELABEL 用冠乔原款号检录，尺码自动换成启序。 点卡",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "启序改标",
+      "hasCanvas": false,
+      "bodyTextLen": 906,
+      "bodyTextHash": "892dc64b583553b835a49e65f72d21a3f29f47a1648f905fb800867b5b1668f7",
+      "bodyTextPrefix": "序 启序改标 工厂尺码 → 启序尺码 0 QIXU · RELABEL 用冠乔原款号检录，尺码自动换成启序。 点卡片选颜色，再按",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

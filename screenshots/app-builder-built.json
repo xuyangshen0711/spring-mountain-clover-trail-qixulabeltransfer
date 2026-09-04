@@ -1,0 +1,50 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "启序改标",
+      "hasCanvas": false,
+      "bodyTextLen": 913,
+      "bodyTextHash": "69f2b672caad816261da57047c3dfa62168c59cfd984f969b9a57bc53699c303",
+      "bodyTextPrefix": "序 启序改标 工厂尺码 → 启序尺码 资料库 草稿 0 QIXU · RELABEL 用冠乔原款号检录，尺码自动换成启序。 点卡",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "启序改标",
+      "hasCanvas": false,
+      "bodyTextLen": 905,
+      "bodyTextHash": "60b5ffb5d1a63153dc2e1e3bd008de8c20d042bae980408bc9348f9817c2fbdc",
+      "bodyTextPrefix": "序启序改标工厂尺码 → 启序尺码 资料库草稿0 QIXU · RELABEL 用冠乔原款号检录，尺码自动换成启序。 点卡片选颜色",
+      "horizontalOverflow": false,
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+        "Failed to load resource: net::ERR_EMPTY_RESPONSE",
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": true,
+  "baselineReasons": [
+    "mobile: console/page errors appeared (8)",
+    "mobile: body text replaced (similar length, page start changed)"
+  ]
+}
