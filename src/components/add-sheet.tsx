@@ -24,7 +24,9 @@ export function AddSheet({
   const [activeColor, setActiveColor] = useState(
     product.colors.length === 1 ? only : "",
   );
-  const [qtysByColor, setQtysByColor] = useState<Record<string, Record<string, number>>>({{}});
+  const [qtysByColor, setQtysByColor] = useState<
+    Record<string, Record<string, number>>
+  >({});
   const upsert = useDraft((s) => s.upsert);
   const relabelDate = useDraft((s) => s.relabelDate);
 
