@@ -68,7 +68,7 @@ function DraftPage() {
           </div>
         </div>
         <p className="mt-2 text-sm text-muted">
-          共 {total} 件 · 按色、按码，数量已经换成启序尺码。
+          共 {total} 件 · 数量按改标前（工厂）尺码填写，右边会标出对应的启序尺码。
         </p>
 
         {lines.length === 0 ? (

@@ -155,7 +155,7 @@ export async function buildDraftWorkbook(input: DraftExcelInput) {
   const extraSizeKeys: string[] = [];
   for (const line of input.lines) {
     if (line.qty <= 0) continue;
-    const key = line.qixuSize.trim().toUpperCase();
+    const key = line.factorySize.trim().toUpperCase();
     if (!SIZE_COLS.some((s) => s.key === key) && !extraSizeKeys.includes(key)) {
       extraSizeKeys.push(key);
     }
@@ -268,7 +268,7 @@ export async function buildDraftWorkbook(input: DraftExcelInput) {
     const qtyBy: Record<string, number> = {};
     let sum = 0;
     for (const line of lines) {
-      const key = line.qixuSize.trim().toUpperCase();
+      const key = line.factorySize.trim().toUpperCase();
       qtyBy[key] = (qtyBy[key] ?? 0) + line.qty;
       sum += line.qty;
     }
