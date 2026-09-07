@@ -76,7 +76,7 @@ export function AddSheet({
       });
     }
     toast.success(
-      `已加入草稿 · ${product.originalSku ?? product.id} ${ready.length} 色 ${previewTotal} 件`,
+      `已加入草稿 · ${product.id} ${ready.length} 色 ${previewTotal} 件`,
     );
     onClose();
   }
@@ -101,9 +101,11 @@ export function AddSheet({
           </div>
           <div className="min-w-0">
             <h2 id="add-sheet-title" className="font-mono text-lg tracking-tight">
-              {product.originalSku ?? product.id}
+              {product.id}
             </h2>
-            <p className="mt-0.5 font-mono text-sm text-muted">→ {product.id}</p>
+            <p className="mt-0.5 font-mono text-sm text-muted">
+              {product.originalSku ?? "拿货"}
+            </p>
             <p className="mt-1 text-xs text-subtle">
               {product.ruleLabel} · 改标后 {productAfterRange(product)}
             </p>
