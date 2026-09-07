@@ -64,6 +64,15 @@ node .output/server/index.mjs
 必需的环境变量只有一个：`DATABASE_URL`。注意在 Vercel 上**构建阶段也要能读到它**，
 因为 `npm run build` 结尾会执行数据库迁移。
 
+### 函数区域
+
+服务器函数固定跑在**香港（hkg1）**，见 `vite.config.ts` 里的 `vercel.functions.regions`
+——使用者在杭州，而 Vercel 默认区域是美东，每次请求都要跨太平洋来回。香港到
+新加坡的 Supabase 约 35ms，剩下的数据库往返代价很低。
+
+改区域用 `VERCEL_FUNCTION_REGION` 环境变量即可（例如美东填 `iad1`）。注意
+Vercel 面板 Settings → Functions 里的设置会覆盖这里，两边只用一处。
+
 ## 已知待办
 
 - 款式照片目前以 base64 存在 Postgres 的 `style_assets` 表里，由 `/api/asset/$id`

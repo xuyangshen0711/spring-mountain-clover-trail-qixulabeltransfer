@@ -69,6 +69,20 @@ export default defineConfig(({ command, isPreview }) => ({
             // Vercel serverless output (.vercel/output). Swap this preset to
             // "node-server" to run the built app on any Node host instead.
             preset: process.env.NITRO_PRESET || "vercel",
+            vercel: {
+              functions: {
+                // Run next to the people using this app (Hangzhou), not in
+                // Vercel's US-East default: every server function call from
+                // China otherwise crosses the Pacific twice. Hong Kong also
+                // stays ~35ms from the Supabase instance in Singapore, so the
+                // few remaining database round trips per request stay cheap.
+                //
+                // Vercel's dashboard setting (Settings -> Functions) overrides
+                // this, so leave that on the default if you change the region
+                // here. Hobby plans allow exactly one region.
+                regions: [process.env.VERCEL_FUNCTION_REGION || "hkg1"],
+              },
+            },
           }),
         ]
       : []),
