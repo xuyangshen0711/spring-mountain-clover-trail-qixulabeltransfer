@@ -1,164 +1,191 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app-header";
+import { StylePhoto } from "@/components/style-photo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StylePhoto } from "@/components/style-photo";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  KIND_OPTIONS,
+  hexForColor,
+  joinSizes,
+  parseSizeList,
   type FactoryName,
   type Product,
   type ProductColor,
 } from "@/data/catalog";
-import { compressImage } from "@/lib/compress-image";
 import { useCatalog } from "@/lib/catalog-store";
-import { saveStyle } from "@/lib/style-api";
+import { useDraft } from "@/lib/draft-store";
+import { compressImage } from "@/lib/compress-image";
+import { deleteStyle, putAsset, saveStyle } from "@/lib/style-api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/library")({ component: LibraryPage });
 
-function blankProduct(): Product {
+function emptyProduct(): Product {
   return {
     id: "",
     originalSku: "",
     factory: "冠乔",
-    listMonth: "26年-8月",
-    colors: [{ name: "", fabric: "" }],
-    kind: "s_to_xs",
-    ruleLabel: "S变XS（整体降码）",
+    listMonth: "26年-9月",
+    colors: [{ name: "", hex: "#8A8178", image: null }],
+    fabric: "",
     factorySizes: ["S", "M", "L", "XL"],
+    qixuSizes: ["XS", "S", "M", "L"],
+    ruleLabel: "S变XS （整体降码）",
     extraNote: "",
     imageFront: null,
     imageSide: null,
   };
 }
 
+function errMsg(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message.slice(0, 180);
+  if (typeof err === "object" && err && "message" in err) {
+    const m = (err as { message: unknown }).message;
+    if (typeof m === "string" && m.trim()) return m.slice(0, 180);
+  }
+  return fallback;
+}
+
+async function persistIfNeeded(url: string | null | undefined): Promise<string | null> {
+  if (!url) return null;
+  if (!url.startsWith("data:")) return url;
+  const res = await putAsset({ data: { dataUrl: url } });
+  return res.url;
+}
+
 function LibraryPage() {
   const products = useCatalog((s) => s.products);
   const refresh = useCatalog((s) => s.refresh);
-  const upsertLocal = useCatalog((s) => s.upsertLocal);
+  const [activeId, setActiveId] = useState<string | "new" | null>(null);
   const [q, setQ] = useState("");
-  const [editing, setEditing] = useState<Product | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const removeProduct = useDraft((s) => s.removeProduct);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  async function reallyDelete(id: string) {
+    try {
+      await deleteStyle({ data: { id } });
+      removeProduct(id);
+      toast.success(`已删除 ${id}`);
+      setPendingDelete(null);
+      await refresh();
+      if (activeId === id) setActiveId(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(errMsg(err, "删除失败"));
+    }
+  }
+
+  async function removeStyle(id: string) {
+    if (pendingDelete !== id) {
+      setPendingDelete(id);
+      return;
+    }
+    await reallyDelete(id);
+  }
+
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return products;
     return products.filter((p) =>
-      `${p.id} ${p.originalSku ?? ""} ${p.colors.map((c) => c.name).join(" ")}`
+      [p.id, p.originalSku ?? "", p.factory, ...p.colors.map((c) => c.name)]
+        .join(" ")
         .toLowerCase()
         .includes(s),
     );
   }, [products, q]);
 
-  async function onSave(p: Product) {
-    if (!p.id.trim()) {
-      toast.error("请填写启序款号");
-      return;
-    }
-    if (p.colors.some((c) => !c.name.trim())) {
-      toast.error("颜色名不能为空");
-      return;
-    }
-    setBusy(true);
-    try {
-      const saved = await saveStyle({
-        data: {
-          ...p,
-          id: p.id.trim(),
-          originalSku: p.originalSku?.trim() ? p.originalSku.trim() : null,
-          extraNote: p.extraNote || undefined,
-        },
-      });
-      upsertLocal(saved);
-      setEditing(saved);
-      toast.success("已写入资料库");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "保存失败");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const editing =
+    activeId === "new"
+      ? emptyProduct()
+      : products.find((p) => p.id === activeId) ?? null;
 
   return (
     <div className="min-h-dvh">
       <AppHeader />
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-8">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="font-display text-3xl tracking-tight">资料库</h1>
-            <p className="mt-1 text-sm text-muted">
-              上传正面 / 侧面图，改面料、颜色和改标规则。列表页会读这里的图。
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setEditing(blankProduct())}
-          >
-            新建款
-          </Button>
+        <p className="text-xs tracking-[0.18em] text-muted">LIBRARY</p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+          <h1 className="font-display text-3xl tracking-tight">资料库</h1>
+          <Button onClick={() => setActiveId("new")}>新建款式</Button>
         </div>
-
+        <p className="mt-2 max-w-xl text-sm text-muted">
+          正面、侧面是整款图；每种颜色也可以单独挂一张。列表页轮播会读到这些图。
+        </p>
         <Input
-          className="mt-6 h-11 max-w-md font-mono"
-          placeholder="搜款号或颜色"
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          placeholder="搜款号"
+          className="mt-6 max-w-sm font-mono"
         />
-
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           <ul className="space-y-2">
-            {list.map((p) => {
-              const on = editing?.id === p.id && editing.id !== "";
-              return (
-                <li key={p.id}>
+            {list.map((p) => (
+              <li key={p.id}>
+                <div
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg border px-2 py-2",
+                    activeId === p.id
+                      ? "border-fg bg-surface"
+                      : "border-border bg-bg-elevated",
+                  )}
+                >
                   <button
                     type="button"
-                    onClick={() => setEditing({ ...p })}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg p-2 text-left",
-                      on ? "bg-secondary" : "bg-surface hover:bg-secondary/60",
-                    )}
+                    onClick={() => setActiveId(p.id)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
                   >
-                    <div className="size-14 overflow-hidden rounded-md bg-secondary">
-                      <StylePhoto
-                        src={p.imageFront}
-                        alt={p.originalSku ?? p.id}
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-mono text-sm">
-                        {p.originalSku ?? "—"}
-                        <span className="mx-1.5 text-subtle">→</span>
-                        {p.id}
-                      </p>
-                      <p className="truncate text-xs text-muted">
-                        {p.colors.map((c) => c.name).join(" · ")} · {p.ruleLabel}
-                      </p>
-                    </div>
+                    <StylePhoto
+                      src={p.imageFront || p.colors[0]?.image}
+                      alt=""
+                      className="size-12 rounded-md"
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-mono text-sm">{p.id}</span>
+                      <span className="block truncate text-xs text-muted">
+                        {p.originalSku ?? (p.factory === "拿货" ? "拿货" : "")}
+                        {p.originalSku || p.factory === "拿货" ? " · " : ""}
+                        {p.colors.map((c) => c.name).join(" / ")}
+                      </span>
+                    </span>
                   </button>
-                </li>
-              );
-            })}
+                  <button
+                    type="button"
+                    aria-label={`删除 ${p.id}`}
+                    className={cn(
+                      "h-9 shrink-0 rounded-full px-2.5 text-xs",
+                      pendingDelete === p.id
+                        ? "bg-stamp text-stamp-fg"
+                        : "text-muted hover:bg-secondary hover:text-stamp",
+                    )}
+                    onClick={() => void removeStyle(p.id)}
+                  >
+                    {pendingDelete === p.id ? "确认删" : <Trash2 className="size-4" />}
+                  </button>
+                </div>
+              </li>
+            ))}
           </ul>
-
           {editing ? (
             <StyleForm
-              key={editing.id || "new"}
+              key={activeId ?? "x"}
               initial={editing}
-              busy={busy}
-              onCancel={() => setEditing(null)}
-              onSave={onSave}
+              isNew={activeId === "new"}
+              onSaved={async (p) => {
+                await refresh();
+                setActiveId(p.id);
+              }}
+              onDeleted={() => void reallyDelete(editing.id)}
             />
           ) : (
-            <p className="rounded-xl border border-dashed border-border-strong bg-surface px-5 py-16 text-center text-sm text-muted">
-              点左侧一款开始改图和细节，或新建款。
-            </p>
+            <p className="text-sm text-muted">点左边一款开始改，或新建。</p>
           )}
         </div>
       </main>
@@ -168,271 +195,366 @@ function LibraryPage() {
 
 function StyleForm({
   initial,
-  busy,
-  onCancel,
-  onSave,
+  isNew,
+  onSaved,
+  onDeleted,
 }: {
   initial: Product;
-  busy: boolean;
-  onCancel: () => void;
-  onSave: (p: Product) => void;
+  isNew: boolean;
+  onSaved: (p: Product) => Promise<void>;
+  onDeleted: () => void | Promise<void>;
 }) {
-  const [form, setForm] = useState<Product>(initial);
-  const isNew = !initial.id;
+  const [id, setId] = useState(initial.id);
+  const [originalSku, setOriginalSku] = useState(initial.originalSku ?? "");
+  const [factory, setFactory] = useState<FactoryName>(initial.factory);
+  const [listMonth, setListMonth] = useState(initial.listMonth);
+  const [fabric, setFabric] = useState(initial.fabric);
+  const [ruleLabel, setRuleLabel] = useState(initial.ruleLabel);
+  const [extraNote, setExtraNote] = useState(initial.extraNote);
+  const [factorySizes, setFactorySizes] = useState(joinSizes(initial.factorySizes));
+  const [qixuSizes, setQixuSizes] = useState(joinSizes(initial.qixuSizes));
+  const [colors, setColors] = useState<ProductColor[]>(
+    initial.colors.length ? initial.colors : [{ name: "", hex: "#8A8178", image: null }],
+  );
+  const [imageFront, setImageFront] = useState(initial.imageFront);
+  const [imageSide, setImageSide] = useState(initial.imageSide);
+  const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   async function onFile(
-    field: "imageFront" | "imageSide",
     file: File | undefined,
+    setter: (url: string) => void,
   ) {
     if (!file) return;
     try {
-      const data = await compressImage(file);
-      setForm((f) => ({ ...f, [field]: data }));
+      const url = await compressImage(file);
+      setter(url);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "图片读取失败");
+      toast.error(errMsg(err, "图片处理失败，试试 JPG / PNG"));
+    }
+  }
+
+  async function onColorFile(index: number, file: File | undefined) {
+    if (!file) return;
+    try {
+      const url = await compressImage(file);
+      setColors((prev) =>
+        prev.map((c, i) => (i === index ? { ...c, image: url } : c)),
+      );
+    } catch (err) {
+      toast.error(errMsg(err, "图片处理失败，试试 JPG / PNG"));
+    }
+  }
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!id.trim()) {
+      toast.error("款号不能空");
+      return;
+    }
+    const fs = parseSizeList(factorySizes);
+    const qs = parseSizeList(qixuSizes);
+    if (!fs.length || !qs.length) {
+      toast.error("尺码两边都要填");
+      return;
+    }
+    const cleaned = colors
+      .map((c) => ({
+        ...c,
+        name: c.name.trim(),
+        hex: hexForColor(c.name.trim()),
+      }))
+      .filter((c) => c.name);
+    if (!cleaned.length) {
+      toast.error("至少一种颜色");
+      return;
+    }
+    setBusy(true);
+    try {
+      const persistedColors: ProductColor[] = [];
+      for (const c of cleaned) {
+        persistedColors.push({
+          ...c,
+          image: await persistIfNeeded(c.image),
+        });
+      }
+      const payload: Product = {
+        id: id.trim(),
+        originalSku: factory === "拿货" ? originalSku.trim() || null : originalSku.trim() || null,
+        factory,
+        listMonth: listMonth.trim() || "26年-9月",
+        colors: persistedColors,
+        fabric,
+        factorySizes: fs,
+        qixuSizes: qs,
+        ruleLabel,
+        extraNote,
+        imageFront: await persistIfNeeded(imageFront),
+        imageSide: await persistIfNeeded(imageSide),
+      };
+      const saved = await saveStyle({ data: payload });
+      setImageFront(saved.imageFront);
+      setImageSide(saved.imageSide);
+      setColors(saved.colors);
+      toast.success("已写入资料库");
+      await onSaved(saved);
+    } catch (err) {
+      console.error(err);
+      toast.error(errMsg(err, "保存失败"));
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
     <form
-      className="space-y-4 rounded-xl bg-surface p-4 shadow-[var(--shadow-border)] sm:p-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSave(form);
-      }}
+      onSubmit={(e) => void onSubmit(e)}
+      className="space-y-4 rounded-lg border border-border bg-surface p-4"
     >
       <div className="grid grid-cols-2 gap-3">
-        <label className="block text-xs text-muted">
-          原款号
+        <ImageSlot
+          label="正面图"
+          src={imageFront}
+          disabled={busy}
+          onFile={(f) => void onFile(f, setImageFront)}
+          onClear={() => setImageFront(null)}
+        />
+        <ImageSlot
+          label="侧面图"
+          src={imageSide}
+          disabled={busy}
+          onFile={(f) => void onFile(f, setImageSide)}
+          onClear={() => setImageSide(null)}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="启序款号">
           <Input
-            className="mt-1 font-mono"
-            value={form.originalSku ?? ""}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, originalSku: e.target.value || null }))
-            }
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+            className="font-mono"
+            disabled={!isNew && Boolean(initial.id)}
           />
-        </label>
-        <label className="block text-xs text-muted">
-          启序款号
+        </Field>
+        <Field label="冠乔原款号">
           <Input
-            className="mt-1 font-mono"
-            value={form.id}
-            disabled={!isNew}
-            onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
+            value={originalSku}
+            onChange={(e) => setOriginalSku(e.target.value)}
+            className="font-mono"
+            placeholder="拿货可空"
           />
-        </label>
-        <label className="block text-xs text-muted">
-          工厂
+        </Field>
+        <Field label="工厂">
           <select
-            className="mt-1 h-11 w-full rounded-md border border-input bg-bg-elevated px-3 text-sm text-fg"
-            value={form.factory}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, factory: e.target.value as FactoryName }))
-            }
+            value={factory}
+            onChange={(e) => setFactory(e.target.value as FactoryName)}
+            className="h-10 w-full rounded-md border border-input bg-surface px-3 text-sm"
           >
             <option value="冠乔">冠乔</option>
             <option value="拿货">拿货</option>
           </select>
-        </label>
-        <label className="block text-xs text-muted">
-          上架月份
+        </Field>
+        <Field label="上架月份">
           <Input
-            className="mt-1"
-            value={form.listMonth}
-            onChange={(e) => setForm((f) => ({ ...f, listMonth: e.target.value }))}
+            value={listMonth}
+            onChange={(e) => setListMonth(e.target.value)}
+            placeholder="26年-9月"
           />
-        </label>
+        </Field>
       </div>
-
-      <label className="block text-xs text-muted">
-        改标规则
-        <select
-          className="mt-1 h-11 w-full rounded-md border border-input bg-bg-elevated px-3 text-sm text-fg"
-          value={form.kind}
-          onChange={(e) => {
-            const kind = e.target.value as Product["kind"];
-            const opt = KIND_OPTIONS.find((k) => k.kind === kind);
-            setForm((f) => ({
-              ...f,
-              kind,
-              ruleLabel: opt?.label ?? f.ruleLabel,
-              factorySizes:
-                kind === "onesize"
-                  ? ["F"]
-                  : kind === "numeric"
-                    ? ["26", "27", "28", "29"]
-                    : kind === "m_to_s"
-                      ? ["M", "L", "XL"]
-                      : ["S", "M", "L", "XL"],
-            }));
-          }}
-        >
-          {KIND_OPTIONS.map((k) => (
-            <option key={k.kind} value={k.kind}>
-              {k.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="block text-xs text-muted">
-        改标说明（可改文案）
-        <Input
-          className="mt-1"
-          value={form.ruleLabel}
-          onChange={(e) => setForm((f) => ({ ...f, ruleLabel: e.target.value }))}
-        />
-      </label>
-
-      <label className="block text-xs text-muted">
-        工厂尺码（空格分隔）
-        <Input
-          className="mt-1 font-mono"
-          value={form.factorySizes.join(" ")}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              factorySizes: e.target.value
-                .split(/[\s,，]+/)
-                .map((s) => s.trim())
-                .filter(Boolean),
-            }))
-          }
-        />
-      </label>
-
-      <label className="block text-xs text-muted">
-        备注
-        <Input
-          className="mt-1"
-          value={form.extraNote ?? ""}
-          onChange={(e) => setForm((f) => ({ ...f, extraNote: e.target.value }))}
-        />
-      </label>
-
-      <div className="grid grid-cols-2 gap-3">
-        <ImageSlot
-          label="正面图"
-          src={form.imageFront}
-          onFile={(f) => void onFile("imageFront", f)}
-          onClear={() => setForm((x) => ({ ...x, imageFront: null }))}
-        />
-        <ImageSlot
-          label="侧面 / 多色"
-          src={form.imageSide}
-          onFile={(f) => void onFile("imageSide", f)}
-          onClear={() => setForm((x) => ({ ...x, imageSide: null }))}
-        />
-      </div>
-
-      <div>
-        <p className="mb-2 text-xs text-muted">颜色与面料</p>
-        <ul className="space-y-3">
-          {form.colors.map((c, i) => (
-            <li key={i} className="rounded-md border border-border p-3">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="颜色名"
-                  value={c.name}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      colors: f.colors.map((x, j) =>
-                        j === i ? { ...x, name: e.target.value } : x,
-                      ),
-                    }))
-                  }
-                />
-                {form.colors.length > 1 ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() =>
-                      setForm((f) => ({
-                        ...f,
-                        colors: f.colors.filter((_, j) => j !== i),
-                      }))
-                    }
-                  >
-                    删
-                  </Button>
-                ) : null}
-              </div>
-              <textarea
-                className="mt-2 min-h-16 w-full rounded-md border border-input bg-bg-elevated px-3 py-2 text-sm"
-                placeholder="面料"
-                value={c.fabric}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    colors: f.colors.map((x, j) =>
-                      j === i ? { ...x, fabric: e.target.value } : x,
-                    ),
-                  }))
+      <div className="space-y-1.5">
+        <Label>颜色 · 每种一张图</Label>
+        <ul className="space-y-2">
+          {colors.map((c, i) => (
+            <li
+              key={i}
+              className="flex items-start gap-3 rounded-lg border border-border bg-bg-elevated p-2"
+            >
+              <ImageSlot
+                label={c.name.trim() || `颜色 ${i + 1}`}
+                src={c.image}
+                compact
+                disabled={busy}
+                onFile={(f) => void onColorFile(i, f)}
+                onClear={() =>
+                  setColors((prev) =>
+                    prev.map((row, j) => (j === i ? { ...row, image: null } : row)),
+                  )
                 }
               />
+              <div className="min-w-0 flex-1 space-y-2 pt-5">
+                <Input
+                  value={c.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setColors((prev) =>
+                      prev.map((row, j) =>
+                        j === i
+                          ? { ...row, name, hex: hexForColor(name.trim()) }
+                          : row,
+                      ),
+                    );
+                  }}
+                  placeholder="颜色名，如 深焙棕"
+                />
+                <div className="flex items-center justify-between">
+                  <span
+                    className="size-4 rounded-full border border-border-strong"
+                    style={{ background: c.hex || hexForColor(c.name.trim()) }}
+                    aria-hidden
+                  />
+                  <button
+                    type="button"
+                    disabled={colors.length <= 1 || busy}
+                    onClick={() =>
+                      setColors((prev) => prev.filter((_, j) => j !== i))
+                    }
+                    className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted hover:bg-secondary hover:text-stamp disabled:opacity-40"
+                  >
+                    <Trash2 className="size-3.5" />
+                    去掉这色
+                  </button>
+                </div>
+              </div>
             </li>
           ))}
         </ul>
-        <Button
+        <button
           type="button"
-          variant="outline"
-          className="mt-2"
+          disabled={busy}
           onClick={() =>
-            setForm((f) => ({
-              ...f,
-              colors: [...f.colors, { name: "", fabric: f.colors[0]?.fabric ?? "" } satisfies ProductColor],
-            }))
+            setColors((prev) => [
+              ...prev,
+              { name: "", hex: "#8A8178", image: null },
+            ])
           }
+          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-sm text-muted hover:bg-secondary hover:text-fg"
         >
-          加颜色
-        </Button>
+          <Plus className="size-3.5" />
+          添加颜色
+        </button>
       </div>
-
+      <Field label="面料">
+        <Textarea value={fabric} onChange={(e) => setFabric(e.target.value)} />
+      </Field>
+      <Field label="改标要求">
+        <Input
+          value={ruleLabel}
+          onChange={(e) => setRuleLabel(e.target.value)}
+          placeholder="S变XS （整体降码）"
+        />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="改标前（工厂尺码，用 / 分隔）">
+          <Input
+            value={factorySizes}
+            onChange={(e) => setFactorySizes(e.target.value)}
+            className="font-mono"
+          />
+        </Field>
+        <Field label="改标后（启序尺码）">
+          <Input
+            value={qixuSizes}
+            onChange={(e) => setQixuSizes(e.target.value)}
+            className="font-mono"
+          />
+        </Field>
+      </div>
+      <Field label="备注">
+        <Input value={extraNote} onChange={(e) => setExtraNote(e.target.value)} />
+      </Field>
       <div className="flex gap-2">
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" disabled={busy} className="flex-1">
           {busy ? "保存中…" : "保存到资料库"}
         </Button>
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          取消
-        </Button>
+        {!isNew && initial.id ? (
+          <Button
+            type="button"
+            variant={confirmDelete ? "stamp" : "outline"}
+            disabled={busy}
+            onClick={() => {
+              if (!confirmDelete) {
+                setConfirmDelete(true);
+                return;
+              }
+              void onDeleted();
+            }}
+          >
+            {confirmDelete ? "确认删除" : "删除"}
+          </Button>
+        ) : null}
       </div>
     </form>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <Label>{label}</Label>
+      {children}
+    </label>
   );
 }
 
 function ImageSlot({
   label,
   src,
+  compact,
+  disabled,
   onFile,
   onClear,
 }: {
   label: string;
   src?: string | null;
-  onFile: (f: File | undefined) => void;
-  onClear: () => void;
+  compact?: boolean;
+  disabled?: boolean;
+  onFile: (file: File | undefined) => void;
+  onClear?: () => void;
 }) {
   return (
-    <label className="block text-xs text-muted">
-      {label}
-      <div className="mt-1 aspect-[5/6] overflow-hidden rounded-md bg-secondary">
-        <StylePhoto src={src} alt={label} />
-      </div>
-      <input
-        type="file"
-        accept="image/*"
-        className="mt-2 block w-full text-xs"
-        onChange={(e) => onFile(e.target.files?.[0])}
-      />
-      {src ? (
-        <button
-          type="button"
-          className="mt-1 text-xs text-muted underline-offset-2 hover:underline"
-          onClick={onClear}
+    <div className={cn("block", compact ? "w-20 shrink-0" : "")}>
+      <span className="mb-1.5 block truncate text-xs font-medium tracking-wide text-muted">
+        {label}
+      </span>
+      <span className="relative block">
+        <label
+          className={cn(
+            "block cursor-pointer overflow-hidden rounded-md border border-dashed border-border-strong bg-bg-elevated",
+            disabled && "pointer-events-none opacity-60",
+          )}
         >
-          清除图片
-        </button>
-      ) : null}
-    </label>
+          <StylePhoto src={src} alt="" className="aspect-[4/5] w-full" />
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/*"
+            className="hidden"
+            disabled={disabled}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              onFile(file);
+            }}
+          />
+        </label>
+        {src && onClear ? (
+          <button
+            type="button"
+            aria-label={`去掉${label}`}
+            disabled={disabled}
+            onClick={onClear}
+            className="absolute right-1 top-1 grid size-7 place-items-center rounded-full bg-surface/90 text-muted shadow-[var(--shadow-border)] hover:text-stamp"
+          >
+            <X className="size-3.5" />
+          </button>
+        ) : null}
+      </span>
+    </div>
   );
 }

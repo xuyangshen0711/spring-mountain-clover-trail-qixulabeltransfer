@@ -1,16 +1,6 @@
 import type { Product } from "@/data/catalog";
+import { styleImages } from "@/data/catalog";
 import { PhotoCarousel } from "@/components/photo-carousel";
-
-function styleImages(p: Product): string[] {
-  const out: string[] = [];
-  const add = (src?: string | null) => {
-    if (src && !out.includes(src)) out.push(src);
-  };
-  add(p.imageFront);
-  add(p.imageSide);
-  for (const c of p.colors) add(c.image);
-  return out;
-}
 
 export function ProductCard({
   product,
@@ -19,33 +9,52 @@ export function ProductCard({
   product: Product;
   onPick: (p: Product) => void;
 }) {
-  const colorCount = product.colors.length;
+  const images = styleImages(product);
+  const below =
+    product.originalSku ?? (product.factory === "拿货" ? "拿货" : "");
   return (
-    <article className="overflow-hidden rounded-lg bg-surface shadow-[var(--shadow-border)] transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-[var(--shadow-border-hover)]">
-      <PhotoCarousel images={styleImages(product)} onOpen={() => onPick(product)} />
+    <article className="overflow-hidden rounded-lg bg-surface shadow-[var(--shadow-border)] transition hover:shadow-[var(--shadow-border-hover)]">
+      <PhotoCarousel images={images} onOpen={() => onPick(product)} />
       <button
         type="button"
-        className="block w-full px-3 pt-3 text-left"
         onClick={() => onPick(product)}
+        className="block w-full px-3 pb-2 pt-3 text-left"
       >
-        <p className="font-mono text-base font-medium tracking-tight">{product.id}</p>
-        <p className="mt-0.5 text-xs text-muted">
-          {product.originalSku ? (
-            <>
-              {product.originalSku} · {colorCount} 色
-            </>
-          ) : (
-            <>拿货 · {colorCount} 色</>
-          )}
+        <p className="font-mono text-sm tracking-tight">{product.id}</p>
+        <p className="mt-0.5 text-sm text-muted">
+          {below}
+          <span className="text-subtle"> · {product.colors.length} 色</span>
         </p>
+        <div className="mt-2 flex flex-wrap gap-1">
+          {product.colors.map((c) => (
+            <span
+              key={c.name}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-bg-elevated pr-2 text-xs text-muted"
+            >
+              {c.image ? (
+                <img
+                  src={c.image}
+                  alt=""
+                  className="size-5 rounded-full object-cover object-top"
+                />
+              ) : (
+                <span
+                  className="size-5 rounded-full border border-border-strong"
+                  style={{ background: c.hex }}
+                />
+              )}
+              {c.name}
+            </span>
+          ))}
+        </div>
       </button>
-      <div className="p-3 pt-2">
+      <div className="px-3 pb-3">
         <button
           type="button"
           onClick={() => onPick(product)}
-          className="flex h-11 w-full items-center justify-center rounded-md border border-border text-sm text-fg hover:bg-secondary"
+          className="h-9 w-full rounded-full bg-fg text-sm text-bg"
         >
-          选颜色加入草稿
+          选颜色加入检录
         </button>
       </div>
     </article>

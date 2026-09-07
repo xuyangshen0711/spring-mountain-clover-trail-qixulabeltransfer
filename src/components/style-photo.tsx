@@ -2,46 +2,39 @@ import { cn } from "@/lib/utils";
 
 export function StylePhoto({
   src,
-  alt,
+  alt = "",
   className,
 }: {
   src?: string | null;
-  alt: string;
+  alt?: string;
   className?: string;
 }) {
-  if (src) {
+  if (!src) {
     return (
-      <img
-        src={src}
-        alt={alt}
+      <div
         className={cn(
-          "h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10",
+          "flex items-center justify-center bg-secondary text-subtle",
           className,
         )}
-      />
+      >
+        <svg viewBox="0 0 64 64" className="size-10" aria-hidden>
+          <path
+            d="M20 18c0-6 5-10 12-10s12 4 12 10c8 2 10 8 10 14v4H10v-4c0-6 2-12 10-14z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+          <path d="M16 36v18h32V36" fill="none" stroke="currentColor" strokeWidth="2" />
+        </svg>
+      </div>
     );
   }
   return (
-    <div
-      className={cn(
-        "flex h-full w-full items-center justify-center bg-secondary text-subtle",
-        className,
-      )}
-      aria-label={alt}
-    >
-      <svg
-        viewBox="0 0 64 80"
-        className="h-16 w-12 opacity-50"
-        fill="none"
-        aria-hidden
-      >
-        <path
-          d="M32 6c3 0 6 2.4 6 6v4h10l4 10v44H12V26l4-10h10v-4c0-3.6 3-6 6-6Z"
-          stroke="currentColor"
-          strokeWidth="1.6"
-        />
-        <path d="M22 26h20" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    </div>
+    <img
+      src={src}
+      alt={alt}
+      className={cn("object-cover object-top", className)}
+      draggable={false}
+    />
   );
 }

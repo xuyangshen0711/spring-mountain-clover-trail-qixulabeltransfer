@@ -17,11 +17,11 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },
+      { name: "theme-color", content: "#4d5c4f" },
       {
         name: "description",
-        content: "冠乔原款号检索、尺码改标换算、草稿与 Excel 导出",
+        content: "用冠乔原款号检录，工厂尺码自动换成启序尺码，导出改标 Excel。",
       },
-      { name: "theme-color", content: "#4d5c4f" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -36,7 +36,7 @@ export const Route = createRootRoute({
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600;700&display=swap",
       },
     ],
   }),
@@ -45,16 +45,11 @@ export const Route = createRootRoute({
       <head>
         <HeadContent />
       </head>
-      <body className="bg-bg text-fg">
+      <body>
         <PreviewHostBridge />
         <AuthProvider>
           <Outlet />
-          <Toaster
-            position="top-center"
-            toastOptions={{
-              className: "font-sans bg-surface text-fg border-border",
-            }}
-          />
+          <Toaster position="top-center" richColors />
         </AuthProvider>
         <Scripts />
       </body>

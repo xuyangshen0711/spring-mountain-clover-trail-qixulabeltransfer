@@ -12,7 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DraftRouteImport } from './routes/draft'
 import { Route as LibraryRouteImport } from './routes/library'
-import { Route as StyleIdRouteImport } from './routes/style.$id'
+import { Route as ApiAssetIdRouteImport } from './routes/api/asset.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,9 +29,9 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StyleIdRoute = StyleIdRouteImport.update({
-  id: '/style/$id',
-  path: '/style/$id',
+const ApiAssetIdRoute = ApiAssetIdRouteImport.update({
+  id: '/api/asset/$id',
+  path: '/api/asset/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -39,34 +39,34 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/draft': typeof DraftRoute
   '/library': typeof LibraryRoute
-  '/style/$id': typeof StyleIdRoute
+  '/api/asset/$id': typeof ApiAssetIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/draft': typeof DraftRoute
   '/library': typeof LibraryRoute
-  '/style/$id': typeof StyleIdRoute
+  '/api/asset/$id': typeof ApiAssetIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/draft': typeof DraftRoute
   '/library': typeof LibraryRoute
-  '/style/$id': typeof StyleIdRoute
+  '/api/asset/$id': typeof ApiAssetIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/draft' | '/library' | '/style/$id'
+  fullPaths: '/' | '/draft' | '/library' | '/api/asset/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/draft' | '/library' | '/style/$id'
-  id: '__root__' | '/' | '/draft' | '/library' | '/style/$id'
+  to: '/' | '/draft' | '/library' | '/api/asset/$id'
+  id: '__root__' | '/' | '/draft' | '/library' | '/api/asset/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DraftRoute: typeof DraftRoute
   LibraryRoute: typeof LibraryRoute
-  StyleIdRoute: typeof StyleIdRoute
+  ApiAssetIdRoute: typeof ApiAssetIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,11 +92,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/style/$id': {
-      id: '/style/$id'
-      path: '/style/$id'
-      fullPath: '/style/$id'
-      preLoaderRoute: typeof StyleIdRouteImport
+    '/api/asset/$id': {
+      id: '/api/asset/$id'
+      path: '/api/asset/$id'
+      fullPath: '/api/asset/$id'
+      preLoaderRoute: typeof ApiAssetIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -106,7 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DraftRoute: DraftRoute,
   LibraryRoute: LibraryRoute,
-  StyleIdRoute: StyleIdRoute,
+  ApiAssetIdRoute: ApiAssetIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -49,15 +49,13 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-  html,
-  body,
-  #app {
-    min-height: 100%;
     background: var(--color-bg);
     color: var(--color-fg);
   }
   body {
+    min-height: 100dvh;
+    background: var(--color-bg);
+    color: var(--color-fg);
     font-family: var(--font-sans);
   }
   button:not(:disabled),
@@ -68,19 +66,8 @@
   h2,
   h3 {
     text-wrap: balance;
-    font-family: var(--font-display);
   }
   p {
     text-wrap: pretty;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
   }
 }

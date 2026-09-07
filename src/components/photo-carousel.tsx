@@ -16,12 +16,18 @@ export function PhotoCarousel({
   const startX = useRef(0);
   const moved = useRef(false);
 
-  if (images.length <= 1) {
+  if (images.length === 0) {
     return (
       <button type="button" className={cn("block w-full", className)} onClick={onOpen}>
-        <div className="aspect-[5/6] w-full overflow-hidden bg-secondary">
-          <StylePhoto src={images[0] ?? null} alt="" />
-        </div>
+        <StylePhoto src={null} alt="" className="aspect-[4/5] w-full" />
+      </button>
+    );
+  }
+
+  if (images.length === 1) {
+    return (
+      <button type="button" className={cn("block w-full", className)} onClick={onOpen}>
+        <StylePhoto src={images[0]} alt="" className="aspect-[4/5] w-full" />
       </button>
     );
   }
@@ -54,12 +60,15 @@ export function PhotoCarousel({
         onClick={() => {
           if (!moved.current) onOpen?.();
         }}
-        className="flex aspect-[5/6] snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex aspect-[4/5] snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {images.map((src) => (
-          <div key={src} className="aspect-[5/6] w-full shrink-0 snap-center overflow-hidden bg-secondary">
-            <StylePhoto src={src} alt="" />
-          </div>
+          <StylePhoto
+            key={src}
+            src={src}
+            alt=""
+            className="aspect-[4/5] w-full shrink-0 snap-center pointer-events-none"
+          />
         ))}
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">

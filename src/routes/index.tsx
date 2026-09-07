@@ -67,7 +67,7 @@ function Home() {
           用冠乔原款号检录，尺码自动换成启序。
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
-          点卡片选颜色，再按工厂尺码填数量。系统当场换成启序尺码，写入草稿后导出
+          点卡片选颜色，同一页按工厂尺码填数量。系统当场换成启序尺码，写入草稿后导出
           Excel。
         </p>
 
@@ -127,7 +127,7 @@ function Home() {
 
         {list.length === 0 ? (
           <p className="mt-10 text-sm text-muted">
-            {loaded ? "没有匹配的款号，换一个款号试试。" : "正在读取资料库…"}
+            {loaded ? "没有匹配的款号，换一个试试。" : "正在读取资料库…"}
           </p>
         ) : (
           groups.map(([label, items]) => (
