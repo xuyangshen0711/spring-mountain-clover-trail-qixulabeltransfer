@@ -41,7 +41,7 @@ function DraftPage() {
     try {
       const { downloadDraftExcel } = await import("@/lib/excel");
       await downloadDraftExcel({ lines, productMap });
-      toast.success("已生成改标 Excel");
+      toast.success("已生成改标 Excel（含图片）");
     } catch (err) {
       console.error(err);
       toast.error("Excel 生成失败");
