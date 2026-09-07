@@ -58,6 +58,9 @@ export const useDraft = create<DraftState>()(
       name: "qixu-relabel-draft",
       skipHydration: true,
       partialize: (s) => ({ lines: s.lines }),
+      onRehydrateStorage: () => () => {
+        useDraft.getState().setHydrated();
+      },
     },
   ),
 );

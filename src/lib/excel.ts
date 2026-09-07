@@ -25,7 +25,7 @@ const THIN = {
 };
 
 const SIZE_COLS = [
-  { key: "XS", label: "xs" },
+  { key: "XS", label: "XS" },
   { key: "S", label: "S (26)" },
   { key: "M", label: "M (27)" },
   { key: "L", label: "L (28)" },
@@ -228,7 +228,7 @@ export async function buildDraftWorkbook(input: DraftExcelInput) {
   [
     [totalCol, "总"],
     [ruleCol, "改标要求"],
-    [afterCol, "改标后尺码"],
+    [afterCol, "启序改标后尺码范围"],
     [noteCol, "备注"],
   ].forEach(([c, label]) => {
     const cell = sheet.getCell(1, c as number);

@@ -245,7 +245,7 @@ export function AddSheet({
             取消
           </Button>
           <Button onClick={commit} disabled={!total}>
-            写入草稿 · {total}
+            加入购物车 · {total}
           </Button>
         </footer>
       </section>
