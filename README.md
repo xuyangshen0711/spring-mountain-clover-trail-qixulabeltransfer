@@ -68,5 +68,16 @@ node .output/server/index.mjs
 
 - 款式照片目前以 base64 存在 Postgres 的 `style_assets` 表里，由 `/api/asset/$id`
   读出。数据量上去之后应迁移到对象存储。
-- `src/routes/__root.tsx` 引用了 Google Fonts，中国大陆无法访问，会拖慢首屏。面向
-  国内用户时应改为自托管字体。
+
+## 字体
+
+四套字体（Cormorant Garamond / IBM Plex Mono / Noto Sans SC / Noto Serif SC）全部
+自托管在 `public/fonts/`，由 `public/fonts.css` 声明——因为 `fonts.googleapis.com`
+在中国大陆无法访问，作为阻塞式样式表会拖住首屏。
+
+`fonts.css` 保留了 Google 的 unicode-range 分片，浏览器只会下载页面实际用到的分片
+（首页约 25 个 / 共 222 个）。中文可变字体的多个字重共用同一个文件，所以重复的
+`@font-face` 已合并成字重区间，CSS 从 gzip 后 184KB 降到 62KB。
+
+需要更新字体时：重新抓取 Google 的 `css2` 链接，把 `fonts.gstatic.com/s/` 换成
+`/fonts/`、文件名里的 `/` 换成 `_`，字体文件下载到 `public/fonts/`。
