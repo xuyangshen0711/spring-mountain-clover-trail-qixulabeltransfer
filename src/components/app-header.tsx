@@ -5,17 +5,15 @@ import { useDraft, draftCount } from "@/lib/draft-store";
 export function AppHeader() {
   const lines = useDraft((s) => s.lines);
   const hydrated = useDraft((s) => s.hydrated);
-  const setHydrated = useDraft((s) => s.setHydrated);
   const count = hydrated ? draftCount(lines) : 0;
 
   useEffect(() => {
-    useDraft.persist.rehydrate();
-    setHydrated();
-  }, [setHydrated]);
+    void useDraft.persist.rehydrate();
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-bg/90 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         <Link to="/" className="flex items-baseline gap-2.5">
           <span className="font-brand text-[1.35rem] italic leading-none tracking-tight text-fg">
             The&nbsp;Q
