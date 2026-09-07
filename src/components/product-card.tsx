@@ -19,7 +19,6 @@ export function ProductCard({
   product: Product;
   onPick: (p: Product) => void;
 }) {
-  const sku = product.originalSku ?? product.id;
   const colorCount = product.colors.length;
   return (
     <article className="overflow-hidden rounded-lg bg-surface shadow-[var(--shadow-border)] transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-[var(--shadow-border-hover)]">
@@ -29,11 +28,11 @@ export function ProductCard({
         className="block w-full px-3 pt-3 text-left"
         onClick={() => onPick(product)}
       >
-        <p className="font-mono text-base font-medium tracking-tight">{sku}</p>
+        <p className="font-mono text-base font-medium tracking-tight">{product.id}</p>
         <p className="mt-0.5 text-xs text-muted">
           {product.originalSku ? (
             <>
-              {product.id} · {colorCount} 色
+              {product.originalSku} · {colorCount} 色
             </>
           ) : (
             <>拿货 · {colorCount} 色</>
