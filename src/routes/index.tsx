@@ -76,7 +76,7 @@ function Home() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="搜索冠乔原款号，例如 886C001"
+            placeholder="搜索款号"
             className="h-12 pl-10 font-mono"
             autoFocus
           />
@@ -127,7 +127,7 @@ function Home() {
 
         {list.length === 0 ? (
           <p className="mt-10 text-sm text-muted">
-            {loaded ? "没有匹配的款号，换一个原款号试试。" : "正在读取资料库…"}
+            {loaded ? "没有匹配的款号，换一个款号试试。" : "正在读取资料库…"}
           </p>
         ) : (
           groups.map(([label, items]) => (
