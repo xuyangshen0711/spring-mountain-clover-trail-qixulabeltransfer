@@ -108,10 +108,29 @@ function parseDataUrl(dataUrl: string): { mime: string; body: string } | null {
   return { mime: m[1], body: m[2].replace(/\s+/g, "") };
 }
 
-async function ensureCoreSchema(sql: Sql) {
-  for (const stmt of CORE_SCHEMA) {
-    await sql.query(stmt);
-  }
+/**
+ * The five CORE_SCHEMA statements are idempotent, so re-running them is
+ * harmless — but each one is a round trip, and the function and the database
+ * sit on different continents. Running them per image turned a three-photo
+ * save into fifteen pointless trans-Pacific round trips before any data moved.
+ *
+ * Memoized per process so the statements run at most once per warm instance
+ * (migrations/*.sql already created these tables; this only covers a database
+ * that somehow skipped them). A failed pass clears the slot so the next call
+ * retries rather than inheriting the failure.
+ */
+let coreSchemaReady: Promise<void> | null = null;
+
+function ensureCoreSchema(sql: Sql): Promise<void> {
+  coreSchemaReady ??= (async () => {
+    for (const stmt of CORE_SCHEMA) {
+      await sql.query(stmt);
+    }
+  })().catch((err) => {
+    coreSchemaReady = null;
+    throw err;
+  });
+  return coreSchemaReady;
 }
 
 async function persistImage(
@@ -253,15 +272,17 @@ export const saveStyle = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Product> => {
     try {
       const sql = await ensureSeeded();
-      const colors = [];
-      for (const c of data.colors) {
+      // Every photo is an independent insert, so awaiting them one at a time
+      // just stacks up the round trip to the database. Send them together.
+      const [colorImages, imageFront, imageSide] = await Promise.all([
+        Promise.all(data.colors.map((c) => persistImage(sql, c.image ?? null))),
+        persistImage(sql, data.imageFront ?? null),
+        persistImage(sql, data.imageSide ?? null),
+      ]);
+      const colors = data.colors.map((c, i) => {
         const name = c.name.trim();
-        colors.push({
-          name,
-          hex: c.hex || hexForColor(name),
-          image: await persistImage(sql, c.image ?? null),
-        });
-      }
+        return { name, hex: c.hex || hexForColor(name), image: colorImages[i] };
+      });
       const product: Product = {
         id: data.id.trim(),
         originalSku: data.originalSku?.trim() || null,
@@ -273,8 +294,8 @@ export const saveStyle = createServerFn({ method: "POST" })
         qixuSizes: data.qixuSizes,
         ruleLabel: data.ruleLabel,
         extraNote: data.extraNote,
-        imageFront: await persistImage(sql, data.imageFront ?? null),
-        imageSide: await persistImage(sql, data.imageSide ?? null),
+        imageFront,
+        imageSide,
       };
       await sql.query(
         `insert into styles (
