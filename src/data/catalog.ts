@@ -23,7 +23,22 @@ export type Product = {
   imageSide: string | null;
 };
 
-export const PRODUCTS: Product[] = seed as Product[];
+function correctSeed(list: Product[]): Product[] {
+  return list.map((p) => {
+    if (p.id !== "26C006") return p;
+    return {
+      ...p,
+      imageFront: "/catalog/26C006-c1.jpg",
+      colors: p.colors.map((c) => {
+        if (c.name === "英伦卡") return { ...c, image: "/catalog/26C006-c1.jpg" };
+        if (c.name === "深焙棕") return { ...c, image: "/catalog/26C006-c0.jpg" };
+        return c;
+      }),
+    };
+  });
+}
+
+export const PRODUCTS: Product[] = correctSeed(seed as Product[]);
 export const PRODUCT_BY_ID = new Map(PRODUCTS.map((p) => [p.id, p]));
 
 export const COLOR_HEX: Record<string, string> = {
@@ -113,7 +128,7 @@ export function parseSizeList(s: string): string[] {
     return ["F"];
   }
   return core
-    .split(/[/／、]/)
+    .split(/[/\uff0f、]/)
     .map((x) => x.trim())
     .filter(Boolean);
 }
