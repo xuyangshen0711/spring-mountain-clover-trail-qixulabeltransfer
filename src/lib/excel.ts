@@ -29,9 +29,36 @@ const SIZE_COLS = [
   { key: "S", label: "S (26)" },
   { key: "M", label: "M (27)" },
   { key: "L", label: "L (28)" },
-  { key: "XL", label: "XL" },
+  { key: "XL", label: "XL (29)" },
   { key: "XXL", label: "XXL" },
 ] as const;
+
+const LETTER_KEYS = new Set(SIZE_COLS.map((s) => s.key));
+
+/** 裤装腰围码 → 表头字母列。上装字母码不走这张表。 */
+const WAIST_TO_LETTER: Record<string, string> = {
+  "25": "XS",
+  "26": "S",
+  "27": "M",
+  "28": "L",
+  "29": "XL",
+  "30": "XXL",
+};
+
+function excelSizeKey(factorySize: string): string {
+  const raw = factorySize.trim().toUpperCase().replace(/^0+/, "");
+  const stripped = raw.replace(/码/g, "").replace(/\s+/g, "");
+  const paren = stripped.match(/^([A-Z]+)\s*[\(（](\d+)[\)）]$/);
+  if (paren && LETTER_KEYS.has(paren[1] as (typeof SIZE_COLS)[number]["key"])) {
+    return paren[1];
+  }
+  if (LETTER_KEYS.has(stripped as (typeof SIZE_COLS)[number]["key"])) {
+    return stripped;
+  }
+  const num = stripped.match(/^(\d+)$/)?.[1];
+  if (num && WAIST_TO_LETTER[num]) return WAIST_TO_LETTER[num];
+  return stripped;
+}
 
 function todaySlash(d = new Date()): string {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
@@ -155,7 +182,7 @@ export async function buildDraftWorkbook(input: DraftExcelInput) {
   const extraSizeKeys: string[] = [];
   for (const line of input.lines) {
     if (line.qty <= 0) continue;
-    const key = line.factorySize.trim().toUpperCase();
+    const key = excelSizeKey(line.factorySize);
     if (!SIZE_COLS.some((s) => s.key === key) && !extraSizeKeys.includes(key)) {
       extraSizeKeys.push(key);
     }
@@ -268,7 +295,7 @@ export async function buildDraftWorkbook(input: DraftExcelInput) {
     const qtyBy: Record<string, number> = {};
     let sum = 0;
     for (const line of lines) {
-      const key = line.factorySize.trim().toUpperCase();
+      const key = excelSizeKey(line.factorySize);
       qtyBy[key] = (qtyBy[key] ?? 0) + line.qty;
       sum += line.qty;
     }
