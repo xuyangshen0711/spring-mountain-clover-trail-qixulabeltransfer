@@ -1,1 +1,16 @@
-PLACEHOLDER
+[
+  {
+    "id": "26C001",
+    "originalSku": "886C001",
+    "factory": "冠乔",
+    "listMonth": "26年-8月",
+    "colors": [{ "name": "深焙棕", "hex": "#5C3A2E", "image": "/catalog/26C001-c0.jpg" }],
+    "fabric": "面料：100%聚酯纤维\n里料：100%聚酯纤维",
+    "factorySizes": ["S", "M", "L", "XL"],
+    "qixuSizes": ["XS", "S", "M", "L"],
+    "ruleLabel": "S变XS （整体降码）",
+    "extraNote": "",
+    "imageFront": "/catalog/26C001-c0.jpg",
+    "imageSide": "/catalog/26C001-side.jpg"
+  }
+]
